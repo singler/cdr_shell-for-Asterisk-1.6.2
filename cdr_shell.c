@@ -17,17 +17,18 @@
  *
  *
  */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <pthread.h>
+#include <asterisk.h>
 #include <asterisk/paths.h> /* use ast_config_AST_LOG_DIR */
 #include <asterisk/cdr.h>
 #include <asterisk/module.h>
 #include <asterisk/logger.h>
 #include <asterisk/cli.h>
 #include <asterisk/config.h>
-#include <asterisk.h>
 
 #include <string.h>
 #include <errno.h>
@@ -78,7 +79,7 @@ static char *config = "cdr.conf";
 static char registry[MAX_REG][CDR_STRING_SIZE];
 static const char *BLANK_STRING = {""};
 
-static int is_executable(char *pathname)
+static int is_executable(const char *pathname)
 {
 	int x ;
 	static struct stat buf ;
@@ -141,7 +142,7 @@ static int shell_log(struct ast_cdr *cdr) {
 		
 		start = ast_tvnow();
 		if (!(pid = fork())) {
-			snprintf(buf[0],CDR_STRING_SIZE,registry[x]);
+			snprintf(buf[0],CDR_STRING_SIZE,"%s", registry[x]);
 			if (is_executable(buf[0])) {
 				int res = execl(buf[0],buf[0],buf[1],buf[2],buf[3],buf[4],
 						buf[5],buf[6],buf[7],buf[8],
