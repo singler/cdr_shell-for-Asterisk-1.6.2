@@ -1,0 +1,12 @@
+This is Asterisk module to execute custom shell script to process CDR records.
+
+Configured script will be executed at the end of each call.
+
+Build this module by copying cdr_shell.c to asterisk_source/cdr/ directory and then running "make".
+
+Install using "make install" or copy asterisk_source/cdr/cdr_shell.so to asterisk's modules directory.
+
+These lines must be added to /etc/asterisk/cdr.conf to configure cdr_shell (changing path parameter as needed):
+
+[cdr_shell]
+path=/path/to/some.script
