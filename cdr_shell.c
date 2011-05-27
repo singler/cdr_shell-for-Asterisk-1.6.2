@@ -2,7 +2,7 @@
  * Asterisk -- A telephony toolkit for Linux.
  *
  * Shell CDR records.
- * 
+ *
  * Copyright (C) 2005 Anthony Minessale
  *
  * Derived from cdr_csv.c by Mark Spencer <markster@linux-support.net>
@@ -10,14 +10,18 @@
  * Asterisk API version compatibility added by Sonia Khan <sonia.ali.khan@gmail.com>
  * Some code clean up and performance fixes were also done. (2007-03-10 00:52:50 GMT+5)
  *
+ * Ported to Asterisk 1.6.2 by Henrik Korkuc (2011-01-27 14:38 UTC+2)
+ *
  * This program is free software, distributed under the terms of
  * the GNU General Public License.
  *
  *
  */
-#include <stdio.h> 
+#include <stdio.h>
 #include <sys/types.h>
-#include <asterisk/channel.h>
+#include <sys/stat.h>
+#include <pthread.h>
+#include <asterisk/paths.h> /* use ast_config_AST_LOG_DIR */
 #include <asterisk/cdr.h>
 #include <asterisk/module.h>
 #include <asterisk/logger.h>
@@ -25,7 +29,6 @@
 #include <asterisk/config.h>
 #include <asterisk.h>
 
-#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 
@@ -34,12 +37,7 @@
 #include <time.h>
 #include <sys/file.h>
 
-/* Comment this line if you are using Asterisk 1.4.x */
-//#define ASTERISK_12 1
 
-#ifdef ASTERISK_12
-#include <asterisk/options.h>
-#endif
 
 /* The values are as follows:
 
@@ -71,6 +69,7 @@
 
 static int active = 0;
 static char *name = "shell";
+static char *config = "cdr.conf";
 
 #define  CDR_STRING_SIZE 128
 #define  MAX_REG 10
@@ -163,29 +162,21 @@ static int shell_log(struct ast_cdr *cdr) {
 	return 0;
 }
 
-#ifdef ASTERISK_12
-int unload_module(void)
-#else
 static int unload_module(void)
-#endif
 {
 	ast_cdr_unregister(name);
 	return 0;
 }
 
-#ifdef ASTERISK_12
-static char *desc = "Shell CDR Backend";
-int load_module(void)
-#else
 static int load_module(void)
-#endif
 {
 	int res = -1;
 	int x = 0;
 	struct ast_config *cfg;
 	struct ast_variable *var;
-	
-	if ((cfg = ast_config_load("cdr.conf"))) {
+  struct ast_flags config_flags = { 0 }; 
+
+	if ((cfg = ast_config_load (config, config_flags))) {
 		for (var = ast_variable_browse(cfg, "cdr_shell"); var; var = var->next) {
 			if (!strcasecmp(var->name, "path")) {
 				if (is_executable(var->value)) {
@@ -204,11 +195,7 @@ static int load_module(void)
 	}
 
 	if (active) {
-#ifdef ASTERISK_12
-		res = ast_cdr_register(name, desc, shell_log);
-#else
 		res = ast_cdr_register(name, ast_module_info->description, shell_log);
-#endif
 	}
 	
 	if (res) {
@@ -218,25 +205,4 @@ static int load_module(void)
 	return res;
 }
 
-#ifdef ASTERISK_12
-char *description(void)
-{
-	return desc;
-}
-int reload(void)
-{
-	return 0;
-}
-
-int usecount(void)
-{
-	return 0;
-}
-
-char *key()
-{
-	return ASTERISK_GPL_KEY;
-}
-#else
 AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Shell CDR Backend");
-#endif
